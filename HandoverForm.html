@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weston Robot — Equipment Handover Form</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f9;color:#1a1a1a;min-height:100vh}
+.page{max-width:760px;margin:0 auto;padding:32px 20px 60px}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);padding:32px 36px;margin-bottom:20px}
+@media(max-width:520px){.card{padding:22px 18px}}
+.header{display:flex;align-items:center;gap:16px}
+.logo{width:44px;height:44px;background:#185FA5;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:24px;height:24px;fill:#fff}
+.org{font-size:12px;color:#378ADD;font-weight:600;letter-spacing:0.05em;text-transform:uppercase}
+.form-title{font-size:22px;font-weight:600;color:#0f1923;margin-top:2px}
+.sp-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#185FA5;background:#E6F1FB;border-radius:4px;padding:3px 8px;margin-top:6px}
+.sec-title{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+.field{margin-bottom:16px;position:relative}
+.field label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:5px}
+.field input[type=text],.field input[type=email],.field input[type=number],.field input[type=date]{width:100%;height:40px;padding:0 12px;font-size:14px;background:#fff;border:1.5px solid #d1d5db;border-radius:8px;color:#1a1a1a;outline:none;font-family:inherit;transition:border-color .15s}
+.field input:focus{border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,0.1)}
+.field input.err-field{border-color:#ef4444;background:#fff8f8}
+.field .hint{font-size:11px;color:#9ca3af;margin-top:4px}
+.field-err{font-size:12px;color:#ef4444;margin-top:4px;display:none;align-items:center;gap:4px}
+.field-err.show{display:flex}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.items-wrap{border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:10px}
+.items-table{width:100%;border-collapse:collapse;font-size:13px}
+.items-table th{text-align:left;padding:9px 12px;color:#6b7280;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+.items-table td{padding:4px 8px;border-bottom:1px solid #f3f4f6}
+.items-table tbody tr:last-child td{border-bottom:none}
+.items-table td input{width:100%;border:none;background:transparent;font-size:13px;color:#1a1a1a;outline:none;padding:5px 4px;border-radius:4px;height:34px;font-family:inherit}
+.items-table td input:focus{background:#f0f7ff}
+.items-err{font-size:12px;color:#ef4444;margin-top:4px;display:none;align-items:center;gap:4px}
+.items-err.show{display:flex}
+.add-btn{font-size:13px;color:#185FA5;cursor:pointer;background:none;border:none;padding:8px 2px;display:flex;align-items:center;gap:5px;font-family:inherit;font-weight:500}
+.add-btn:hover{color:#0C447C}
+.rm-btn{background:none;border:none;cursor:pointer;color:#9ca3af;padding:4px 6px;border-radius:4px;font-size:14px;line-height:1}
+.rm-btn:hover{color:#ef4444;background:#fef2f2}
+.sig-label{font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}
+.sig-wrap{position:relative}
+.sig-box{border:1.5px dashed #d1d5db;border-radius:8px;background:#fafafa;position:relative;overflow:hidden;transition:border-color .2s,background .2s;cursor:crosshair}
+.sig-box.active{border:1.5px solid #185FA5;border-style:solid;background:#fff}
+.sig-box.err-sig{border-color:#ef4444;background:#fff8f8}
+.sig-canvas{display:block;width:100%;height:130px;touch-action:none}
+.sig-ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#9ca3af;pointer-events:none;display:flex;align-items:center;gap:6px;white-space:nowrap;user-select:none}
+.sig-clear{position:absolute;top:8px;right:10px;font-size:11px;color:#6b7280;cursor:pointer;background:#fff;border:1px solid #e5e7eb;padding:3px 10px;border-radius:5px;font-family:inherit;z-index:2}
+.sig-clear:hover{background:#f9fafb;color:#374151}
+.sig-err{font-size:12px;color:#ef4444;margin-top:4px;display:none;align-items:center;gap:4px}
+.sig-err.show{display:flex}
+.req{color:#ef4444}
+.opt{font-size:10px;color:#9ca3af;background:#f3f4f6;border-radius:3px;padding:1px 6px;margin-left:5px;font-weight:500;vertical-align:middle}
+.divider{height:1px;background:#f3f4f6;margin:24px 0}
+.btn-row{display:flex;gap:10px}
+@media(max-width:480px){.btn-row{flex-direction:column}}
+.btn-pri{flex:1;height:44px;background:#185FA5;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;transition:background .15s}
+.btn-pri:hover{background:#0C447C}
+.btn-pri:disabled{background:#93c5fd;cursor:not-allowed}
+.btn-sec{height:44px;padding:0 20px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:9px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn-sec:hover{background:#f9fafb}
+.btn-pdf{height:44px;padding:0 18px;background:#fff;color:#185FA5;border:1.5px solid #bfdbfe;border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:inherit}
+.btn-pdf:hover{background:#EFF6FF}
+.btn-pdf:disabled{opacity:.4;cursor:not-allowed}
+
+/* Modal overlay */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:14px;padding:28px 32px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px}
+.modal-icon.err{background:#fef2f2;color:#ef4444}
+.modal-icon.ok{background:#f0fdf4;color:#16a34a}
+.modal-icon.loading{background:#EFF6FF;color:#185FA5}
+.modal-title{font-size:17px;font-weight:600;text-align:center;margin-bottom:8px}
+.modal-body{font-size:14px;color:#6b7280;text-align:center;line-height:1.6;margin-bottom:20px}
+.modal-body ul{text-align:left;padding-left:20px;margin-top:8px}
+.modal-body ul li{margin-bottom:4px;color:#374151}
+.modal-btn{width:100%;height:42px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal-btn.pri{background:#185FA5;color:#fff}
+.modal-btn.pri:hover{background:#0C447C}
+.modal-btn.ok-btn{background:#16a34a;color:#fff}
+.modal-btn.ok-btn:hover{background:#15803d}
+.spin{width:16px;height:16px;border:2.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;font-size:11px;color:#9ca3af;margin-top:28px}
+</style>
+</head>
+<body>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon" id="modalIcon"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <button class="modal-btn pri" id="modalBtn" onclick="closeModal()">OK</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="card">
+    <div class="header">
+      <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2m0 6c3.31 0 6 2.69 6 6v2H6v-2c0-3.31 2.69-6 6-6m-4 9h8v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-1z"/></svg></div>
+      <div>
+        <div class="org">Weston Robot</div>
+        <div class="form-title">Equipment Handover Form</div>
+        <div class="sp-tag">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          ProductDevelopment › 7. Operations › 6. Handover Takeover › Handover_Log.xlsx
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="card">
+    <div class="sec-title">Items list</div>
+    <div class="items-wrap" id="itemsWrap">
+      <table class="items-table">
+        <thead><tr>
+          <th style="width:40%">Item name</th>
+          <th style="width:14%">Qty</th>
+          <th style="width:34%">Remarks</th>
+          <th style="width:12%"></th>
+        </tr></thead>
+        <tbody id="ib">
+          <tr>
+            <td><input type="text" placeholder="e.g. Robotic arm unit"/></td>
+            <td><input type="number" placeholder="1" min="1"/></td>
+            <td><input type="text" placeholder="Optional"/></td>
+            <td><button class="rm-btn" onclick="rmRow(this)" title="Remove">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="items-err" id="itemsErr">⚠ Please add at least one item.</div>
+    <button class="add-btn" onclick="addRow()">＋ Add item</button>
+  </div>
+
+  <!-- Submitter -->
+  <div class="card">
+    <div class="sec-title">Submitted by</div>
+    <div class="field" id="fSubName">
+      <label>Full name <span class="req">*</span></label>
+      <input type="text" id="subName" placeholder="Your full name" oninput="clearFieldErr('fSubName')"/>
+      <div class="field-err" id="errSubName">⚠ This field is required.</div>
+    </div>
+    <div class="field">
+      <div class="sig-label">Signature <span class="req">*</span></div>
+      <div class="sig-wrap">
+        <div class="sig-box" id="sbA">
+          <canvas id="sigA"></canvas>
+          <div class="sig-ph" id="sigAPh">✏&nbsp; Sign here using stylus or finger</div>
+          <button class="sig-clear" onclick="clrSig('sigA','sigAPh','sbA','errSigA')">Clear</button>
+        </div>
+        <div class="sig-err" id="errSigA">⚠ Signature is required.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipient -->
+  <div class="card">
+    <div class="sec-title">Recipient</div>
+    <div class="grid2">
+      <div class="field" id="fRecName">
+        <label>Full name <span class="req">*</span></label>
+        <input type="text" id="recName" placeholder="Recipient's full name" oninput="clearFieldErr('fRecName')"/>
+        <div class="field-err" id="errRecName">⚠ This field is required.</div>
+      </div>
+      <div class="field" id="fRecOrg">
+        <label>Organisation <span class="req">*</span></label>
+        <input type="text" id="recOrg" placeholder="Company / department" oninput="clearFieldErr('fRecOrg')"/>
+        <div class="field-err" id="errRecOrg">⚠ This field is required.</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Email <span class="opt">optional</span></label>
+      <input type="email" id="recEmail" placeholder="recipient@example.com"/>
+      <div class="hint">Recorded in the SharePoint log and noted on the PDF for softcopy delivery.</div>
+    </div>
+    <div class="field">
+      <div class="sig-label">Signature <span class="req">*</span></div>
+      <div class="sig-wrap">
+        <div class="sig-box" id="sbB">
+          <canvas id="sigB"></canvas>
+          <div class="sig-ph" id="sigBPh">✏&nbsp; Sign here using stylus or finger</div>
+          <button class="sig-clear" onclick="clrSig('sigB','sigBPh','sbB','errSigB')">Clear</button>
+        </div>
+        <div class="sig-err" id="errSigB">⚠ Signature is required.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date + submit -->
+  <div class="card">
+    <div class="sec-title">Date</div>
+    <div class="field" id="fHoDate" style="max-width:210px">
+      <label>Date of handover <span class="req">*</span></label>
+      <input type="date" id="hoDate" oninput="clearFieldErr('fHoDate')"/>
+      <div class="field-err" id="errHoDate">⚠ Please select a date.</div>
+    </div>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button class="btn-sec" onclick="resetForm()">Reset</button>
+      <button class="btn-pdf" id="pdfBtn" onclick="doExportPDF()" disabled>⬇ Export PDF</button>
+      <button class="btn-pri" id="subBtn" onclick="submitForm()">↑ Submit &amp; save to SharePoint</button>
+    </div>
+  </div>
+
+  <div class="footer">Weston Robot Equipment Handover System &nbsp;·&nbsp; Records saved to SharePoint ProductDevelopment</div>
+</div>
+
+<script>
+const DRIVE_ID='b!VkmxTVqcVk-ZchUwNVWjC_Rqi6XrXAVDhUSoKMohC9BlxQDAC81VRIZG0c2589pL';
+const SP_PATH='7. Operations/6. Handover Takeover/Handover_Log.xlsx';
+const TABLE='HandoverLog';
+const SS={sigA:false,sigB:false};
+
+/* ── Signature canvas ── */
+function initSig(id, phId, boxId) {
+  const cv = document.getElementById(id);
+  const ph = document.getElementById(phId);
+  const box = document.getElementById(boxId);
+  const ctx = cv.getContext('2d');
+  let drawing = false;
+  const dpr = window.devicePixelRatio || 1;
+
+  function sizeCanvas() {
+    const rect = box.getBoundingClientRect();
+    const w = rect.width;
+    const h = 130;
+    if (cv.width === Math.round(w * dpr) && cv.height === Math.round(h * dpr)) return;
+    const snap = SS[id] ? cv.toDataURL() : null;
+    cv.style.width  = w + 'px';
+    cv.style.height = h + 'px';
+    cv.width  = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (snap) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, w, h);
+      img.src = snap;
+    }
+  }
+
+  function getPos(e) {
+    const r = cv.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+
+  function startDraw(e) {
+    e.preventDefault();
+    sizeCanvas();
+    drawing = true;
+    const p = getPos(e);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    ph.style.display = 'none';
+    box.classList.add('active');
+    box.classList.remove('err-sig');
+    SS[id] = true;
+    document.getElementById('errSig' + id.charAt(id.length-1).toUpperCase() + id.slice(-1)).classList.remove('show');
+    chkReady();
+  }
+  function draw(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineTo(p.x, p.y); ctx.stroke();
+  }
+  function stopDraw() { drawing = false; }
+
+  cv.addEventListener('mousedown',  startDraw);
+  cv.addEventListener('mousemove',  draw);
+  cv.addEventListener('mouseup',    stopDraw);
+  cv.addEventListener('mouseleave', stopDraw);
+  cv.addEventListener('touchstart', startDraw, { passive: false });
+  cv.addEventListener('touchmove',  draw,      { passive: false });
+  cv.addEventListener('touchend',   stopDraw);
+
+  // Size on load and whenever the box resizes
+  sizeCanvas();
+  new ResizeObserver(sizeCanvas).observe(box);
+}
+
+function clrSig(id, phId, boxId, errId) {
+  const cv = document.getElementById(id);
+  cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  document.getElementById(phId).style.display = 'flex';
+  document.getElementById(boxId).classList.remove('active');
+  SS[id] = false;
+  chkReady();
+}
+
+/* ── Field error helpers ── */
+function showFieldErr(fieldId, inputId, errId) {
+  const inp = document.getElementById(inputId);
+  if (inp) inp.classList.add('err-field');
+  document.getElementById(errId).classList.add('show');
+}
+function clearFieldErr(fieldId) {
+  const field = document.getElementById(fieldId);
+  if (!field) return;
+  field.querySelectorAll('input').forEach(i => i.classList.remove('err-field'));
+  field.querySelectorAll('.field-err').forEach(e => e.classList.remove('show'));
+}
+function showSigErr(boxId, errId) {
+  document.getElementById(boxId).classList.add('err-sig');
+  document.getElementById(errId).classList.add('show');
+}
+
+/* ── Validation ── */
+function validate(mark) {
+  let ok = true;
+  const v = (inputId, fieldId, errId) => {
+    if (!document.getElementById(inputId).value.trim()) {
+      if (mark) showFieldErr(fieldId, inputId, errId);
+      ok = false;
+    }
+  };
+  v('subName','fSubName','errSubName');
+  v('recName','fRecName','errRecName');
+  v('recOrg','fRecOrg','errRecOrg');
+  v('hoDate','fHoDate','errHoDate');
+  if (!SS.sigA) { if (mark) showSigErr('sbA','errSigA'); ok = false; }
+  if (!SS.sigB) { if (mark) showSigErr('sbB','errSigB'); ok = false; }
+  let hasItem = false;
+  document.querySelectorAll('#ib tr').forEach(r => { if (r.cells[0].querySelector('input').value.trim()) hasItem = true; });
+  if (!hasItem) { if (mark) document.getElementById('itemsErr').classList.add('show'); ok = false; }
+  else document.getElementById('itemsErr').classList.remove('show');
+  return ok;
+}
+
+function chkReady() { document.getElementById('pdfBtn').disabled = !validate(false); }
+
+/* ── Items table ── */
+function addRow() {
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="text" placeholder="Item name"/></td><td><input type="number" placeholder="1" min="1"/></td><td><input type="text" placeholder="Optional"/></td><td><button class="rm-btn" onclick="rmRow(this)" title="Remove">✕</button></td>';
+  document.getElementById('ib').appendChild(tr);
+}
+function rmRow(btn) {
+  const tb = document.getElementById('ib');
+  if (tb.rows.length > 1) btn.closest('tr').remove();
+}
+function getItems() {
+  return Array.from(document.querySelectorAll('#ib tr')).map(r => ({
+    name: r.cells[0].querySelector('input').value.trim(),
+    qty:  r.cells[1].querySelector('input').value.trim() || '1',
+    remarks: r.cells[2].querySelector('input').value.trim()
+  })).filter(r => r.name);
+}
+function itemsStr(items) {
+  return items.map(i => `${i.name} | ${i.qty}${i.remarks ? ' | ' + i.remarks : ''}`).join('; ');
+}
+
+/* ── Modal ── */
+function showModal(type, title, bodyHtml, btnLabel, btnClass) {
+  const icons = { err: '✕', ok: '✓', loading: '' };
+  document.getElementById('modalIcon').className = 'modal-icon ' + type;
+  document.getElementById('modalIcon').innerHTML = type === 'loading'
+    ? '<div class="spin"></div>' : icons[type];
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  const btn = document.getElementById('modalBtn');
+  btn.textContent = btnLabel || 'OK';
+  btn.className = 'modal-btn ' + (btnClass || 'pri');
+  btn.style.display = type === 'loading' ? 'none' : 'block';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+/* ── PDF ── */
+function buildPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W=210, m=18, cw=W-m*2;
+  const subName  = document.getElementById('subName').value.trim();
+  const recName  = document.getElementById('recName').value.trim();
+  const recOrg   = document.getElementById('recOrg').value.trim();
+  const recEmail = document.getElementById('recEmail').value.trim();
+  const hoDate   = document.getElementById('hoDate').value;
+  const dateStr  = hoDate ? new Date(hoDate+'T00:00:00').toLocaleDateString('en-SG',{day:'2-digit',month:'long',year:'numeric'}) : '';
+  let y = 18;
+  doc.setFillColor(24,95,165); doc.rect(0,0,W,28,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255); doc.text('Weston Robot',m,13);
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.text('Equipment Handover Form',m,20);
+  doc.setFontSize(9); doc.setTextColor(181,212,244);
+  doc.text('Generated: '+new Date().toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'}),W-m,20,{align:'right'});
+  y=38;
+  function sh(lbl){doc.setFillColor(230,241,251);doc.rect(m,y,cw,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(24,95,165);doc.text(lbl.toUpperCase(),m+3,y+5);y+=11;doc.setTextColor(30,30,30);}
+  function fld(lbl,val,x,fw){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text(lbl,x,y);doc.setFontSize(10);doc.setTextColor(30,30,30);doc.setFont('helvetica','bold');doc.text(val||'—',x,y+5);doc.setFont('helvetica','normal');doc.setDrawColor(200,200,200);doc.line(x,y+7,x+fw,y+7);}
+  sh('Items List');
+  const items=getItems(), cW=[cw*.5,cw*.15,cw*.35];
+  doc.setFillColor(245,247,250);doc.rect(m,y,cw,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(80,80,80);
+  doc.text('Item Name',m+3,y+5);doc.text('Qty',m+cW[0]+3,y+5);doc.text('Remarks',m+cW[0]+cW[1]+3,y+5);y+=9;
+  items.forEach((r,i)=>{if(i%2===0){doc.setFillColor(252,252,252);doc.rect(m,y-1,cw,8,'F');}doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,30);doc.text(r.name,m+3,y+5);doc.text(r.qty,m+cW[0]+3,y+5);doc.text(r.remarks||'',m+cW[0]+cW[1]+3,y+5);doc.setDrawColor(230,230,230);doc.line(m,y+7,m+cw,y+7);y+=9;});
+  y+=8;
+  sh('Submitted By'); fld('Full Name',subName,m,cw*.6); y+=14;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text('Signature',m,y);y+=3;
+  doc.addImage(document.getElementById('sigA').toDataURL('image/png'),'PNG',m,y,70,22);
+  doc.setDrawColor(200,200,200);doc.rect(m,y,70,22);y+=30;
+  sh('Recipient'); fld('Full Name',recName,m,cw*.48); fld('Organisation',recOrg,m+cw*.52,cw*.48); y+=14;
+  if(recEmail){doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text('Email',m,y);doc.setFontSize(9);doc.setTextColor(24,95,165);doc.text(recEmail,m,y+5);y+=12;}
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text('Signature',m,y);y+=3;
+  doc.addImage(document.getElementById('sigB').toDataURL('image/png'),'PNG',m,y,70,22);
+  doc.setDrawColor(200,200,200);doc.rect(m,y,70,22);y+=30;
+  sh('Date of Handover'); doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30,30,30);doc.text(dateStr,m,y+5);y+=14;
+  doc.setDrawColor(230,230,230);doc.line(m,y+6,W-m,y+6);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(160,160,160);
+  doc.text('This document was generated by Weston Robot Equipment Handover System.',W/2,y+11,{align:'center'});
+  return doc;
+}
+function doExportPDF() {
+  if (!validate(true)) {
+    showModal('err','Missing information','Please fill in all required fields and capture both signatures before exporting.','Got it');
+    return;
+  }
+  const doc = buildPDF();
+  const subName = document.getElementById('subName').value.trim();
+  const dateVal = document.getElementById('hoDate').value;
+  doc.save('WestonRobot_Handover_' + subName.replace(/\s+/g,'_') + '_' + (dateVal||'undated') + '.pdf');
+}
+
+/* ── Submit ── */
+async function submitForm() {
+  if (!validate(true)) {
+    const missing = [];
+    if (!document.getElementById('subName').value.trim()) missing.push('Submitter name');
+    if (!SS.sigA) missing.push('Submitter signature');
+    if (!document.getElementById('recName').value.trim()) missing.push('Recipient name');
+    if (!document.getElementById('recOrg').value.trim()) missing.push('Recipient organisation');
+    if (!SS.sigB) missing.push('Recipient signature');
+    if (!document.getElementById('hoDate').value) missing.push('Date of handover');
+    let hasItem = false;
+    document.querySelectorAll('#ib tr').forEach(r => { if (r.cells[0].querySelector('input').value.trim()) hasItem = true; });
+    if (!hasItem) missing.push('At least one item in the list');
+    showModal('err', 'Please complete the form',
+      'The following required fields are missing:<ul>' + missing.map(m=>'<li>'+m+'</li>').join('') + '</ul>',
+      'Got it');
+    // Scroll to first error
+    const firstErr = document.querySelector('.err-field, .err-sig');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  showModal('loading', 'Saving to SharePoint…', 'Please wait while your submission is being recorded.');
+
+  const subName  = document.getElementById('subName').value.trim();
+  const recName  = document.getElementById('recName').value.trim();
+  const recOrg   = document.getElementById('recOrg').value.trim();
+  const recEmail = document.getElementById('recEmail').value.trim();
+  const hoDate   = document.getElementById('hoDate').value;
+  const items    = getItems();
+  const itemsText = itemsStr(items).replace(/"/g,"'");
+  const totalItems = items.length;
+  const now = new Date().toISOString().replace('T',' ').slice(0,19);
+
+  const prompt = `You are a SharePoint automation assistant for Weston Robot. Use the Microsoft 365 MCP read_resource tool to call Microsoft Graph API endpoints.
+
+DRIVE_ID: b!VkmxTVqcVk-ZchUwNVWjC_Rqi6XrXAVDhUSoKMohC9BlxQDAC81VRIZG0c2589pL
+FILE: 7. Operations/6. Handover Takeover/Handover_Log.xlsx
+TABLE: HandoverLog
+
+STEP 1 — Get current row count to determine next Submission ID:
+GET https://graph.microsoft.com/v1.0/drives/b!VkmxTVqcVk-ZchUwNVWjC_Rqi6XrXAVDhUSoKMohC9BlxQDAC81VRIZG0c2589pL/root:/7. Operations/6. Handover Takeover/Handover_Log.xlsx:/workbook/tables/HandoverLog/rows?$top=1000
+
+Count rows returned. Next ID = count + 1, formatted WR-XXXXX (e.g. WR-00001 for first row).
+
+STEP 2 — POST new row:
+POST https://graph.microsoft.com/v1.0/drives/b!VkmxTVqcVk-ZchUwNVWjC_Rqi6XrXAVDhUSoKMohC9BlxQDAC81VRIZG0c2589pL/root:/7. Operations/6. Handover Takeover/Handover_Log.xlsx:/workbook/tables/HandoverLog/rows/add
+Body: {"values":[["{ID}","${now}","${subName.replace(/"/g,"'")}","${recName.replace(/"/g,"'")}","${recOrg.replace(/"/g,"'")}","${recEmail}","${hoDate}","${itemsText}",${totalItems}]]}
+
+Replace {ID} with the computed WR-XXXXX.
+
+Respond ONLY with valid JSON (no markdown): {"success":true,"submissionId":"WR-XXXXX","totalRows":N} or {"success":false,"error":"short reason"}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://microsoft365.mcp.claude.com/mcp', name: 'microsoft365' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    let result = null;
+    try { const m = text.match(/\{[\s\S]*?\}/); if (m) result = JSON.parse(m[0]); } catch(e) {}
+
+    closeModal();
+    if (result && result.success) {
+      doExportPDF();
+      const emailNote = recEmail ? '<br><small>PDF copy noted for ' + recEmail + '</small>' : '';
+      showModal('ok', 'Saved to SharePoint ✓',
+        'Submission <strong>' + result.submissionId + '</strong> has been recorded (row ' + result.totalRows + ').' + emailNote,
+        'Done', 'ok-btn');
+      document.getElementById('modalBtn').addEventListener('click', resetForm, { once: true });
+    } else {
+      const errMsg = result?.error || text.slice(0, 200) || 'Unknown error';
+      showModal('err', 'SharePoint save failed', 'Error: ' + errMsg + '<br><br>Your PDF has still been downloaded. Please try submitting again.', 'Close');
+      doExportPDF();
+    }
+  } catch(e) {
+    closeModal();
+    showModal('err', 'Network error', e.message, 'Close');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ── Reset ── */
+function resetForm() {
+  ['subName','recName','recOrg','recEmail'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('hoDate').value = new Date().toISOString().split('T')[0];
+  clrSig('sigA','sigAPh','sbA','errSigA');
+  clrSig('sigB','sigBPh','sbB','errSigB');
+  document.getElementById('ib').innerHTML = '<tr><td><input type="text" placeholder="e.g. Robotic arm unit"/></td><td><input type="number" placeholder="1" min="1"/></td><td><input type="text" placeholder="Optional"/></td><td><button class="rm-btn" onclick="rmRow(this)" title="Remove">✕</button></td></tr>';
+  document.querySelectorAll('.err-field').forEach(e => e.classList.remove('err-field'));
+  document.querySelectorAll('.field-err, .sig-err, .items-err').forEach(e => e.classList.remove('show'));
+  document.querySelectorAll('.err-sig').forEach(e => e.classList.remove('err-sig'));
+  document.getElementById('pdfBtn').disabled = true;
+}
+
+/* ── Boot ── */
+document.addEventListener('input', chkReady);
+document.getElementById('hoDate').value = new Date().toISOString().split('T')[0];
+
+// Init signatures after layout is painted
+window.addEventListener('load', () => {
+  initSig('sigA', 'sigAPh', 'sbA');
+  initSig('sigB', 'sigBPh', 'sbB');
+});
+</script>
+</body>
+</html>
